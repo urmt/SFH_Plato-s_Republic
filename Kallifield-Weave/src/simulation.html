@@ -1,0 +1,99 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <title>SFH Qualic Simulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { display: block; margin: 0 auto; }
+        #explanation { max-width: 600px; margin: 20px auto; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <script>
+        let grid;
+
+        function setup() {
+            createCanvas(400, 400);
+            colorMode(HSB); // For ROYGBIV
+            background(0); // Black for contrast
+            grid = Array(10).fill().map(() => Array(10).fill(0)); // Start at 0 (red)
+        }
+
+        function draw() {
+            background(0);
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 10; j++) {
+                    let h = grid[i][j] * 270; // 0=red, 270=violet
+                    fill(h, 100, 100); // Hue, saturation, brightness
+                    rect(i * 40, j * 40, 40, 40);
+                    if (frameCount % 60 === 0) {
+                        grid[i][j] += 0.1 * (Math.random() - 0.5); // Random fluctuation
+                        grid[i][j] = constrain(grid[i][j], 0, 1); // Bound 0 to 1
+                    }
+                }
+            }
+        }
+    </script>
+
+    <div id="explanation">
+        <h2>Understanding the SFH Qualic Simulation</h2>
+        <p>This simulation represents a 10x10 grid based on the Sentient Field Hypothesis (SFH) from *The Sentient Republic*. Each of the 100 cells models a unit of qualic coherence, measuring the harmonic alignment of the sentient field's projections—tied to consciousness.</p>
+        
+        <h3>What the Colors Mean</h3>
+        <p>Coherence ranges from 0.0 to 1.0, displayed as a ROYGBIV spectrum:
+        - **Red (0.0)**: Minimal coherence (chaos).
+        - **Orange-Yellow-Green (0.3-0.6)**: Moderate coherence (balance).
+        - **Blue-Indigo-Violet (1.0)**: High coherence (harmony).
+        Cells start at 0 (red) and fluctuate, stabilizing around 0.5.</p>
+        
+        <h3>Why Changes Are Subtle</h3>
+        <p>Slow, random adjustments mimic natural drift, updating every ~1 second.</p>
+        
+        <h3>Real-World Context</h3>
+        <p>In Kallifield, this models Weavers’ consciousness—violet for attunement.</p>
+        
+        <h3>Enhancement Ideas</h3>
+        <p>Add interactions or a "seed" point. Let the creator know!</p>
+    </div>
+</body>
+</html>

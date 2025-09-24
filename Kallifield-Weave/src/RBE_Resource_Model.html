@@ -1,0 +1,98 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <title>RBE Resource Model</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { display: block; margin: 0 auto; }
+        #explanation { max-width: 600px; margin: 20px auto; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <script>
+        let resources;
+
+        function setup() {
+            createCanvas(400, 400);
+            colorMode(HSB); // For ROYGBIV
+            background(0); // Black for contrast
+            resources = Array(10).fill().map(() => Array(10).fill(0)); // Start at 0 (red)
+        }
+
+        function draw() {
+            background(0);
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 10; j++) {
+                    let h = resources[i][j] * 270; // 0=red, 270=violet
+                    fill(h, 100, 100); // Hue, saturation, brightness
+                    rect(i * 40, j * 40, 40, 40);
+                    if (frameCount % 60 === 0) {
+                        resources[i][j] += (1 - resources[i][j]) * 0.1; // Trend to 1 (violet)
+                    }
+                }
+            }
+        }
+    </script>
+
+    <div id="explanation">
+        <h2>Understanding the RBE Resource Model</h2>
+        <p>This simulation visualizes a 10x10 grid representing a Resource-Based Economy (RBE), a concept from the Venus Project. Each of the 100 squares corresponds to a small area or unit where resources (e.g., food, water, energy) are distributed.</p>
+        
+        <h3>What the Colors Mean</h3>
+        <p>The colors follow a ROYGBIV spectrum, indicating resource levels from 0.0 to 1.0:
+        - **Red (0.0)**: Minimal resources, signaling scarcity.
+        - **Orange-Yellow-Green (0.3-0.6)**: Moderate resources, showing balance.
+        - **Blue-Indigo-Violet (0.7-1.0)**: Abundant resources, reflecting RBE's optimal equity.
+        All squares start at 0 (red) and trend toward 1 (violet) every ~1 second, symbolizing the system's move toward abundance.</p>
+        
+        <h3>Why Changes Are Gradual</h3>
+        <p>The slow increase mimics controlled AI distribution. Uniformity reflects an idealized RBE where no area depletes.</p>
+        
+        <h3>Real-World Context</h3>
+        <p>In Kallifield, this could depict AI-managed resource grids, ensuring every unit reaches abundance (violet).</p>
+        
+        <h3>Enhancement Ideas</h3>
+        <p>Add fluctuations or sharing for dynamics. Let the creator know!</p>
+    </div>
+</body>
+</html>
